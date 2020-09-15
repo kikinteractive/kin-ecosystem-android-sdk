@@ -22,16 +22,15 @@ import com.kin.ecosystem.data.model.Balance;
 import com.kin.ecosystem.data.model.Payment;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import kin.core.BlockchainEvents;
-import kin.core.EventListener;
-import kin.core.KinAccount;
-import kin.core.KinClient;
-import kin.core.ListenerRegistration;
-import kin.core.Request;
-import kin.core.ResultCallback;
-import kin.core.TransactionId;
+
+import kin.sdk.EventListener;
+import kin.sdk.KinAccount;
+import kin.sdk.KinClient;
+import kin.sdk.ListenerRegistration;
+import kin.sdk.TransactionId;
+import kin.sdk.exception.OperationFailedException;
+import kin.utils.Request;
+import kin.utils.ResultCallback;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -67,9 +66,6 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 	@Mock
 	private KinAccount kinAccount;
 
-	@Mock
-	private BlockchainEvents blockchainEvents;
-
 
 	@Captor
 	private ArgumentCaptor<EventListener<Void>> accountCreationCaptor;
@@ -86,13 +82,13 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 
 
 	@Mock
-	private Request<kin.core.Balance> getBalanceReq;
+	private Request<kin.sdk.Balance> getBalanceReq;
 
 	@Captor
-	private ArgumentCaptor<ResultCallback<kin.core.Balance>> getBalanceCaptor;
+	private ArgumentCaptor<ResultCallback<kin.sdk.Balance>> getBalanceCaptor;
 
 	@Mock
-	private kin.core.Balance balanceObj;
+	private kin.sdk.Balance balanceObj;
 
 
 	private BlockchainSourceImpl blockchainSource;
@@ -103,13 +99,12 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 		super.setUp();
 		MockitoAnnotations.initMocks(this);
 		when(kinClient.addAccount()).thenReturn(kinAccount);
-		when(kinAccount.blockchainEvents()).thenReturn(blockchainEvents);
 		when(kinAccount.getBalance()).thenReturn(getBalanceReq);
-		when(kinAccount.activate()).thenReturn(activateAccountReq);
-		when(blockchainEvents.addAccountCreationListener(any(EventListener.class))).thenReturn(accountRegistration);
+//		when(kinAccount.activate()).thenReturn(activateAccountReq);
+		when(kinAccount.addAccountCreationListener(any(EventListener.class))).thenReturn(accountRegistration);
 		when(balanceObj.value()).thenReturn(new BigDecimal(20));
 		when(kinAccount.getPublicAddress()).thenReturn(PUBLIC_ADDRESS);
-		doNothing().when(kinAccount).activateSync();
+//		doNothing().when(kinAccount).activateSync();
 
 
 		resetInstance();
@@ -117,11 +112,11 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 		// Account Creation
 		verify(kinClient).addAccount();
 
-		verify(blockchainEvents).addAccountCreationListener(accountCreationCaptor.capture());
+		verify(kinAccount).addAccountCreationListener(accountCreationCaptor.capture());
 		accountCreationCaptor.getValue().onEvent(null);
 
 		Thread.sleep(250);
-		verify(kinAccount).activateSync();
+//		verify(kinAccount).activateSync();
 		verify(eventLogger).send(any(StellarKinTrustlineSetupSucceeded.class));
 
 
@@ -186,8 +181,12 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 		Request<TransactionId> transactionRequest = mock(Request.class);
 		ArgumentCaptor<ResultCallback<TransactionId>> resultCallbackArgumentCaptor =
 			forClass(ResultCallback.class);
-		when(kinAccount.sendTransaction(any(String.class), any(BigDecimal.class), any(String.class)))
-			.thenReturn(transactionRequest);
+		try {
+			when(kinAccount.sendTransaction(kinAccount.buildTransactionSync(any(String.class), any(BigDecimal.class), any(Integer.class), any(String.class))))
+				.thenReturn(transactionRequest);
+		} catch (OperationFailedException e) {
+			e.printStackTrace();
+		}
 		when(local.hasTrustLine()).thenReturn(true);
 
 		blockchainSource.setAppID(APP_ID);
@@ -211,8 +210,12 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 		Request<TransactionId> transactionRequest = mock(Request.class);
 		ArgumentCaptor<ResultCallback<TransactionId>> resultCallbackArgumentCaptor =
 			forClass(ResultCallback.class);
-		when(kinAccount.sendTransaction(any(String.class), any(BigDecimal.class), any(String.class)))
-			.thenReturn(transactionRequest);
+		try {
+			when(kinAccount.sendTransaction(kinAccount.buildTransactionSync(any(String.class), any(BigDecimal.class), any(Integer.class), any(String.class))))
+				.thenReturn(transactionRequest);
+		} catch (OperationFailedException e) {
+			e.printStackTrace();
+		}
 		when(local.hasTrustLine()).thenReturn(true);
 
 		blockchainSource.setAppID(APP_ID);
@@ -236,7 +239,7 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 
 	@Test
 	public void add_balance_observer_get_onChanged() {
-		kin.core.Balance innerBalance = mock(kin.core.Balance.class);
+		kin.sdk.Balance innerBalance = mock(kin.sdk.Balance.class);
 		blockchainSource.addBalanceObserver(new Observer<Balance>() {
 			@Override
 			public void onChanged(Balance value) {
@@ -268,7 +271,7 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 
 	@Test
 	public void add_balance_observer_and_start_listen() throws Exception {
-		ArgumentCaptor<EventListener<kin.core.Balance>> balanceEventListener = forClass(EventListener.class);
+		ArgumentCaptor<EventListener<kin.sdk.Balance>> balanceEventListener = forClass(EventListener.class);
 
 		blockchainSource.addBalanceObserverAndStartListen(new Observer<Balance>() {
 			@Override
@@ -277,7 +280,7 @@ public class BlockchainSourceImplTest extends BaseTestClass {
 			}
 		});
 
-		verify(blockchainEvents).addBalanceListener(balanceEventListener.capture());
+		verify(kinAccount).addBalanceListener(balanceEventListener.capture());
 		BigDecimal value = new BigDecimal(123);
 
 		when(balanceObj.value()).thenReturn(value);

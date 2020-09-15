@@ -22,16 +22,17 @@ import com.kin.ecosystem.data.model.Payment;
 import com.kin.ecosystem.exception.BlockchainException;
 import com.kin.ecosystem.util.ErrorUtil;
 import java.math.BigDecimal;
-import kin.core.EventListener;
-import kin.core.KinAccount;
-import kin.core.KinClient;
-import kin.core.ListenerRegistration;
-import kin.core.PaymentInfo;
-import kin.core.ResultCallback;
-import kin.core.TransactionId;
-import kin.core.exception.CreateAccountException;
-import kin.core.exception.OperationFailedException;
+
 import kin.ecosystem.core.util.ExecutorsUtil.MainThreadExecutor;
+import kin.sdk.EventListener;
+import kin.sdk.KinAccount;
+import kin.sdk.KinClient;
+import kin.sdk.ListenerRegistration;
+import kin.sdk.PaymentInfo;
+import kin.sdk.TransactionId;
+import kin.sdk.exception.CreateAccountException;
+import kin.sdk.exception.OperationFailedException;
+import kin.utils.ResultCallback;
 
 public class BlockchainSourceImpl implements BlockchainSource {
 
@@ -110,7 +111,7 @@ public class BlockchainSourceImpl implements BlockchainSource {
 
 	private void startAccountCreationListener() {
 		Log.d(TAG, "startAccountCreationListener");
-		accountCreationRegistration = account.blockchainEvents()
+		accountCreationRegistration = account
 			.addAccountCreationListener(new EventListener<Void>() {
 				@Override
 				public void onEvent(Void data) {
@@ -166,21 +167,27 @@ public class BlockchainSourceImpl implements BlockchainSource {
 		createTrustLineIfNeeded(new TrustlineCallback() {
 			@Override
 			public void onSuccess() {
-				account.sendTransaction(publicAddress, amount, generateMemo(orderID)).run(
-					new ResultCallback<TransactionId>() {
-						@Override
-						public void onResult(TransactionId result) {
-							eventLogger.send(SpendTransactionBroadcastToBlockchainSucceeded.create(result.id(), offerID, orderID));
-							Log.d(TAG, "sendTransaction onResult: " + result.id());
-						}
+				try {
+					//TODO Change fee to something useful
+					account.sendTransaction(account.buildTransactionSync(publicAddress, amount, 0, generateMemo(orderID))).run(
+						new ResultCallback<TransactionId>() {
+							@Override
+							public void onResult(TransactionId result) {
+								eventLogger.send(SpendTransactionBroadcastToBlockchainSucceeded.create(result.id(), offerID, orderID));
+								Log.d(TAG, "sendTransaction onResult: " + result.id());
+							}
 
-						@Override
-						public void onError(Exception e) {
-							eventLogger.send(SpendTransactionBroadcastToBlockchainFailed.create(e.getMessage(), offerID, orderID));
-							completedPayment.setValue(new Payment(orderID, false, e));
-							Log.d(TAG, "sendTransaction onError: " + e.getMessage());
-						}
-					});
+							@Override
+							public void onError(Exception e) {
+								eventLogger.send(SpendTransactionBroadcastToBlockchainFailed.create(e.getMessage(), offerID, orderID));
+								completedPayment.setValue(new Payment(orderID, false, e));
+								Log.d(TAG, "sendTransaction onError: " + e.getMessage());
+							}
+						});
+				} catch (OperationFailedException e) {
+					//TODO What should we do with this exception?
+					e.printStackTrace();
+				}
 			}
 
 			@Override
@@ -216,9 +223,9 @@ public class BlockchainSourceImpl implements BlockchainSource {
 
 	@Override
 	public void getBalance(@NonNull final KinCallback<Balance> callback) {
-		account.getBalance().run(new ResultCallback<kin.core.Balance>() {
+		account.getBalance().run(new ResultCallback<kin.sdk.Balance>() {
 			@Override
-			public void onResult(final kin.core.Balance balanceObj) {
+			public void onResult(final kin.sdk.Balance balanceObj) {
 				setBalance(balanceObj);
 				mainThread.execute(new Runnable() {
 					@Override
@@ -243,7 +250,7 @@ public class BlockchainSourceImpl implements BlockchainSource {
 	}
 
 	@VisibleForTesting
-	void setBalance(final kin.core.Balance balanceObj) {
+	void setBalance(final kin.sdk.Balance balanceObj) {
 		Balance balanceTemp = balance.getValue();
 		// if the values are not equals so we need to update,
 		// no need to update for equal values.
@@ -279,10 +286,10 @@ public class BlockchainSourceImpl implements BlockchainSource {
 
 	private void startBalanceListener() {
 		Log.d(TAG, "startBalanceListener: ");
-		balanceRegistration = account.blockchainEvents()
-			.addBalanceListener(new EventListener<kin.core.Balance>() {
+		balanceRegistration = account
+			.addBalanceListener(new EventListener<kin.sdk.Balance>() {
 				@Override
-				public void onEvent(kin.core.Balance data) {
+				public void onEvent(kin.sdk.Balance data) {
 					KinBalanceUpdated.create(balance.getValue().getAmount().doubleValue());
 					setBalance(data);
 				}
@@ -338,7 +345,7 @@ public class BlockchainSourceImpl implements BlockchainSource {
 	}
 
 	private void startPaymentListener() {
-		paymentRegistration = account.blockchainEvents()
+		paymentRegistration = account
 			.addPaymentListener(new EventListener<PaymentInfo>() {
 				@Override
 				public void onEvent(PaymentInfo data) {

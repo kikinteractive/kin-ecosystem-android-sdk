@@ -1,8 +1,8 @@
 package com.kin.ecosystem.data.blockchain;
 
-import android.support.annotation.VisibleForTesting;
-import kin.core.KinAccount;
-import kin.core.exception.OperationFailedException;
+
+import kin.sdk.KinAccount;
+import kin.sdk.exception.OperationFailedException;
 
 class CreateTrustLineCall extends Thread {
 
@@ -14,6 +14,7 @@ class CreateTrustLineCall extends Thread {
 	CreateTrustLineCall(KinAccount account, TrustlineCallback trustlineCallback) {
 		this.account = account;
 		this.trustlineCallback = trustlineCallback;
+
 	}
 
 	@Override
@@ -24,7 +25,9 @@ class CreateTrustLineCall extends Thread {
 
 	private void createTrustline(int tries) {
 		try {
-			account.activateSync();
+			// TODO Activate account not necessary anymore?
+//			account.activateSync();
+			account.getStatusSync();
 			trustlineCallback.onSuccess();
 		} catch (OperationFailedException e) {
 			if (tries < MAX_TRIES) {
