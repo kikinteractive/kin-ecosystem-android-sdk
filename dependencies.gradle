@@ -1,7 +1,7 @@
 ext {
 
     //Version
-    kinCoreVersion = '0.1.4'
+    kinCoreVersion = '0.2.2'
     constraintLayoutVersion = '1.0.2'
     supportVersion = '26.1.0'
     picassoVersion = '2.71828'
@@ -10,7 +10,7 @@ ext {
     baseRecyclerAdapterVersion = '18191dd'
 
     //Packages
-    kinFoundationPackage = 'com.github.kinfoundation'
+    kinFoundationPackage = 'org.kin.sdk.android'
     supportPackage = 'com.android.support'
     constraintLayoutPackage = 'com.android.support.constraint'
     picassoPackage = 'com.squareup.picasso'
@@ -29,7 +29,7 @@ ext {
     robolectricPackage = 'org.robolectric'
 
     devDependencies = [
-            kinCore            : buildDependency(kinFoundationPackage, 'kin-core-android', kinCoreVersion),
+            kinCore            : buildDependency(kinFoundationPackage, 'base-compat-shaded', kinCoreVersion),
             appCompat_v7       : buildDependency(supportPackage, 'appcompat-v7', supportVersion),
             recyclerView_v7    : buildDependency(supportPackage, 'recyclerview-v7', supportVersion),
             constraintLayout   : buildDependency(constraintLayoutPackage, 'constraint-layout', constraintLayoutVersion),
@@ -43,7 +43,7 @@ ext {
 
     testingDependencies = [
             junit      : buildDependency(junitPackage, 'junit', junitVersion),
-            mockito    : buildDependency(mockitoPackage, 'mockito-core', mockitoVersion),
+            mockito    : buildDependency(mockitoPackage, 'mockito-inline', mockitoVersion),
             robolectric: buildDependency(robolectricPackage, 'robolectric', robolectricVersion),
     ]
 }

@@ -19,11 +19,11 @@ import com.kin.ecosystem.exception.KinEcosystemException;
 import com.kin.ecosystem.exception.ServiceException;
 import kin.ecosystem.core.network.ApiException;
 import kin.ecosystem.core.network.model.Error;
-import kin.core.exception.AccountNotActivatedException;
-import kin.core.exception.AccountNotFoundException;
-import kin.core.exception.CreateAccountException;
-import kin.core.exception.InsufficientKinException;
-import kin.core.exception.TransactionFailedException;
+import kin.sdk.exception.AccountNotFoundException;
+import kin.sdk.exception.CreateAccountException;
+import kin.sdk.exception.InsufficientKinException;
+import kin.sdk.exception.TransactionFailedException;
+
 
 public class ErrorUtil {
 
@@ -95,9 +95,10 @@ public class ErrorUtil {
 				error);
 		} else if (error instanceof AccountNotFoundException) {
 			exception = new BlockchainException(ACCOUNT_NOT_FOUND, THE_REQUESTED_ACCOUNT_COULD_NOT_BE_FOUND, error);
-		} else if (error instanceof AccountNotActivatedException) {
-			exception = new BlockchainException(ACCOUNT_ACTIVATION_FAILED,
-				FAILED_TO_ACTIVATE_ON_THE_BLOCKCHAIN_NETWORK, error);
+			//TODO activate account not necessary anymore?
+//		} else if (error instanceof AccountNotActivatedException) {
+//			exception = new BlockchainException(ACCOUNT_ACTIVATION_FAILED,
+//				FAILED_TO_ACTIVATE_ON_THE_BLOCKCHAIN_NETWORK, error);
 		} else {
 			exception = new BlockchainException(UNKNOWN, BLOCKCHAIN_ENCOUNTERED_AN_UNEXPECTED_ERROR, error);
 		}

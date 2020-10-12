@@ -35,10 +35,10 @@ import com.kin.ecosystem.network.model.SignInData.SignInTypeEnum;
 import com.kin.ecosystem.splash.view.SplashViewActivity;
 import com.kin.ecosystem.util.ErrorUtil;
 import java.util.UUID;
-import kin.core.KinClient;
-import kin.core.ServiceProvider;
 import kin.ecosystem.core.util.DeviceUtils;
 import kin.ecosystem.core.util.ExecutorsUtil;
+import kin.sdk.Environment;
+import kin.sdk.KinClient;
 
 
 public class Kin {
@@ -138,12 +138,13 @@ public class Kin {
 	private static void initBlockchain(Context context) throws BlockchainException {
 		final String networkUrl = Configuration.getEnvironment().getBlockchainNetworkUrl();
 		final String networkId = Configuration.getEnvironment().getBlockchainPassphrase();
-		KinClient kinClient = new KinClient(context, new ServiceProvider(networkUrl, networkId) {
-			@Override
-			protected String getIssuerAccountId() {
-				return Configuration.getEnvironment().getIssuer();
-			}
-		}, KIN_ECOSYSTEM_STORE_PREFIX_KEY);
+		KinClient kinClient = new KinClient(context, new Environment(networkUrl, networkId), AuthRepository.getInstance().getAppID().getValue());
+//		KinClient kinClient = new KinClient(context, new ServiceProvider(networkUrl, networkId) {
+//			@Override
+//			protected String getIssuerAccountId() {
+//				return Configuration.getEnvironment().getIssuer();
+//			}
+//		}, KIN_ECOSYSTEM_STORE_PREFIX_KEY);
 		BlockchainSourceImpl.init(instance.eventLogger, kinClient, BlockchainSourceLocal.getInstance(context));
 	}
 

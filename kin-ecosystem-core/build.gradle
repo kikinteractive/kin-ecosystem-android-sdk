@@ -12,6 +12,11 @@ android {
         versionCode 1
         versionName "${KIN_ECOSYSTEM_CORE_VERSION_NAME}"
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
